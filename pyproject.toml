@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "comp0124-coursework"
+version = "0.1.0"
+description = ""
+authors = ["Linus Folkerts <linus.folkerts@li-f.de>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+mesa = "^2.2.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
