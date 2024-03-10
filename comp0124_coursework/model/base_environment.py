@@ -114,4 +114,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     env = BaseEnvironment((1000, 1000), (500, 500))
-    env.run(render=True)
+    env.run(render=False)
