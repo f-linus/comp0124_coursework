@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-mesa = "^2.2.4"
+opencv-python = "^4.9.0.80"
 
 
 [build-system]
