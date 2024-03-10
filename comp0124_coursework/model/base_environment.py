@@ -21,8 +21,9 @@ class Grid:
 
 
 class BaseEnvironment:
-    def __init__(self, size: tuple, logging_interval=40) -> None:
+    def __init__(self, size: tuple, nest_location: tuple, logging_interval=40) -> None:
         self.grid = Grid(size)
+        self.nest_location = nest_location
         self.ants = set()
         self.logging_interval = logging_interval
         self.avg_step_time = 0
@@ -30,35 +31,29 @@ class BaseEnvironment:
 
     def run(
         self,
-        no_ants=500,
-        no_iterations=10000,
-        render=True,
+        no_ants=50,
+        no_iterations=1000,
+        render=False,
         render_interval=10,
         render_step_wait_time=1,
+        iterations_to_save_rendering=[10, 100, 500, 1000],
     ):
         # spawn ants
         for i in range(no_ants):
-            while True:
-                rnd_position = (
-                    np.random.randint(0, self.grid.size[0]),
-                    np.random.randint(0, self.grid.size[1]),
-                )
-                if self.grid.physical_layer[rnd_position] == 0:
-                    break
-
-            rnd_position = (self.grid.size[0] / 2, self.grid.size[1] / 2)
             rnd_rotation = np.random.uniform(0, 2 * np.pi)
 
-            ant = Ant(f"ant_{i}", self, rnd_position, rnd_rotation)
+            ant = Ant(f"ant_{i}", self, self.nest_location, rnd_rotation)
             self.ants.add(ant)
 
         if render:
             cv2.namedWindow("env_vis", cv2.WINDOW_NORMAL)
 
-        for i in range(no_iterations):
+        for i in range(1, no_iterations + 1):
             if render and i % render_interval == 0:
                 start_time = time.time()
-                self.render()
+                image = self.render()
+                cv2.imshow("env_vis", image)
+
                 cv2.waitKey(render_step_wait_time)
                 self.avg_render_time += (
                     (time.time() - start_time)
@@ -66,6 +61,11 @@ class BaseEnvironment:
                     / render_interval
                     / self.logging_interval
                 )
+
+            if i in iterations_to_save_rendering:
+                if not render or i % render_interval != 0:
+                    image = self.render()
+                cv2.imwrite(f"render_{i}.png", image * 255)
 
             self.step()
 
@@ -98,7 +98,7 @@ class BaseEnvironment:
         # ants
         image[self.grid.physical_layer == Grid.ANT] = [1.0, 1.0, 1.0]
 
-        cv2.imshow("env_vis", image)
+        return image
 
     def pheremonone_decay(self):
         self.grid.food_pheromone_layer = np.max(
@@ -113,5 +113,5 @@ class BaseEnvironment:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    env = BaseEnvironment((1000, 1000))
-    env.run()
+    env = BaseEnvironment((1000, 1000), (500, 500))
+    env.run(render=True)
