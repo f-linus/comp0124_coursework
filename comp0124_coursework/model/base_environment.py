@@ -30,10 +30,10 @@ class BaseEnvironment:
         size: tuple,
         nest_location: tuple,
         logging_interval=40,
-        no_ants=400,
+        no_ants=200,
         no_iterations=10000,
         render_to_screen=False,
-        render_interval=10,
+        render_interval=1,
         render_step_wait_time=1,
         save_rendering_interval=1000,
         extra_iterations_to_save_rendering=[10, 100, 500],
@@ -45,7 +45,7 @@ class BaseEnvironment:
         self.avg_step_time = 0
         self.avg_render_time = 0
         self.iteration = 1
-        self.pheremonone_decay_rate = 1
+        self.pheremonone_decay_rate = 0.6
 
         self.render_to_screen = render_to_screen
         self.render_interval = render_interval
@@ -61,7 +61,9 @@ class BaseEnvironment:
             self.ants.add(ant)
 
         # spawn some food
-        self.grid.physical_layer[200:210, 200:210] = Grid.FOOD
+        self.grid.physical_layer[50:60, 50:60] = Grid.FOOD
+        self.grid.physical_layer[400:410, 300:310] = Grid.FOOD
+        self.grid.physical_layer[100:110, 400:410] = Grid.FOOD
 
         if render_to_screen:
             cv2.namedWindow("env_vis", cv2.WINDOW_NORMAL)
@@ -87,6 +89,16 @@ class BaseEnvironment:
         self.avg_step_time += (time.time() - start_time) * 1000 / self.logging_interval
 
     def pheremonone_decay(self):
+        self.grid.home_pheromone_layer = np.max(
+            np.stack(
+                [
+                    self.grid.home_pheromone_layer - self.pheremonone_decay_rate,
+                    np.zeros(self.grid.size),
+                ],
+                axis=2,
+            ),
+            axis=2,
+        )
         self.grid.food_pheromone_layer = np.max(
             np.stack(
                 [
@@ -167,4 +179,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     env = BaseEnvironment()
-    env.run((600, 600), (300, 300), render_to_screen=False)
+    env.run((500, 500), (250, 250), render_to_screen=False)

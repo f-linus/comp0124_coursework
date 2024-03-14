@@ -8,6 +8,8 @@ class Ant:
         env,
         position: tuple,
         rotation=0,
+        ant_collision=False,
+        food_depletion=False,
         pheremone_intensity_coefficient=0.008,
     ) -> None:
         self.name = name
@@ -22,6 +24,8 @@ class Ant:
         self.last_nest_visit = env.iteration
         self.found_food_at = None
         self.nest_detection_radius = 5
+        self.ant_collision = ant_collision
+        self.food_depletion = food_depletion
 
         self.no_of_navigation_probes = 10
         self.probing_distance = 5
@@ -100,9 +104,12 @@ class Ant:
         )
 
         if (
-            0 <= new_position_discrete[0] < self.env.grid.size[0]
-            and 0 <= new_position_discrete[1] < self.env.grid.size[1]
-        ) and self.env.grid.physical_layer[new_position_discrete] == 0:
+            (0 <= new_position_discrete[0] < self.env.grid.size[0])
+            and (0 <= new_position_discrete[1] < self.env.grid.size[1])
+        ) and (
+            self.env.grid.physical_layer[new_position_discrete] == 0
+            or not self.ant_collision
+        ):
             # remove ant from old position
             self.env.grid.physical_layer[self.pos_discrete] = 0
 
@@ -168,7 +175,9 @@ class Ant:
                 if self.env.grid.physical_layer[i, j] == 2:
                     self.carrying_food = True
                     self.found_food_at = self.env.iteration
-                    self.env.grid.physical_layer[i, j] = 0
+
+                    if self.food_depletion:
+                        self.env.grid.physical_layer[i, j] = 0
 
                     # flip rotation
                     self.rotation = self.rotation + np.pi
