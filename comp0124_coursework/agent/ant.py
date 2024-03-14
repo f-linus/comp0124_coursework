@@ -8,7 +8,7 @@ class Ant:
         env,
         position: tuple,
         rotation=0,
-        pheremone_intensity_coefficient=0.001,
+        pheremone_intensity_coefficient=0.008,
     ) -> None:
         self.name = name
         self.env = env
@@ -21,6 +21,7 @@ class Ant:
         self.carrying_food = False
         self.last_nest_visit = env.iteration
         self.found_food_at = None
+        self.nest_detection_radius = 5
 
         self.no_of_navigation_probes = 10
         self.probing_distance = 5
@@ -173,10 +174,22 @@ class Ant:
                     self.rotation = self.rotation + np.pi
                     return
 
+    def detect_nest(self):
+        if self.carrying_food:
+            nest_dist = np.linalg.norm(
+                np.array(self.pos) - np.array(self.env.nest_location)
+            )
+
+            if nest_dist <= self.nest_detection_radius:
+                self.carrying_food = False
+                self.last_nest_visit = self.env.iteration
+                self.rotation = self.rotation + np.pi
+
     def step(self):
         self.move()
         self.detect_food()
         self.deposit_pheromone()
+        self.detect_nest()
 
     def __hash__(self):
         return hash(self.name)

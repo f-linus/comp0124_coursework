@@ -30,7 +30,7 @@ class BaseEnvironment:
         size: tuple,
         nest_location: tuple,
         logging_interval=40,
-        no_ants=50,
+        no_ants=400,
         no_iterations=10000,
         render_to_screen=False,
         render_interval=10,
@@ -151,6 +151,15 @@ class BaseEnvironment:
         # food
         image[self.grid.physical_layer == Grid.FOOD] = [0.0, 0.0, 1.0]
 
+        # 6x6 for nest
+        image[
+            self.nest_location[0] - 3 : self.nest_location[0] + 3,
+            self.nest_location[1] - 3 : self.nest_location[1] + 3,
+        ] = [
+            1.0,
+            1.0,
+            0.0,
+        ]
         return image
 
 
