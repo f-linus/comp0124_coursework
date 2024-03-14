@@ -10,29 +10,35 @@ class Ant:
         rotation=0,
         ant_collision=False,
         food_depletion=False,
-        pheremone_intensity_coefficient=0.008,
+        pheremone_intensity_coefficient=0.005,
+        nest_detection_radius=5,
+        no_of_navigation_probes=10,
+        probing_distance=5,
+        food_detection_box_size=5,
+        movement_speed=1,
+        rotation_noise=0.2,
     ) -> None:
         self.name = name
         self.env = env
         self.pos = position
+        self.rotation = rotation
+        self.ant_collision = ant_collision
+        self.food_depletion = food_depletion
+        self.pheremone_intensity_coefficient = pheremone_intensity_coefficient
+        self.nest_detection_radius = nest_detection_radius
+        self.probing_distance = probing_distance
+        self.no_of_navigation_probes = no_of_navigation_probes
+        self.food_detection_box_size = food_detection_box_size
+        self.movement_speed = movement_speed
+        self.rotation_noise = rotation_noise
+
         self.pos_discrete = (
             int(self.pos[0]),
             int(self.pos[1]),
         )
-        self.rotation = rotation
         self.carrying_food = False
         self.last_nest_visit = env.iteration
         self.found_food_at = None
-        self.nest_detection_radius = 5
-        self.ant_collision = ant_collision
-        self.food_depletion = food_depletion
-
-        self.no_of_navigation_probes = 10
-        self.probing_distance = 5
-        self.pheremone_intensity_coefficient = pheremone_intensity_coefficient
-        self.rotation_noise = 0.2
-        self.movement_speed = 1
-        self.food_detection_box_size = 5
 
     def determine_ideal_direction(self):
         probing_directions = np.linspace(
@@ -67,22 +73,32 @@ class Ant:
             else:
                 new_rotation = probing_directions[np.argmax(concentrations)]
         else:
-            # probe home pheromone layer
+            # probe home pheromone layer and food layer for food
             concentrations = []
+            found_food = None
             for pos in probing_positions_discrete:
                 if (
                     0 <= pos[0] < self.env.grid.size[0]
                     and 0 <= pos[1] < self.env.grid.size[1]
                 ):
                     concentrations.append(self.env.grid.food_pheromone_layer[pos])
+                    if self.env.grid.food_layer[pos] == 1:
+                        found_food = pos
+                        break
                 else:
                     concentrations.append(0)
 
-            # choose direction with highest concentration
-            if np.max(concentrations) == 0:
-                new_rotation = self.rotation
+            if found_food is not None:
+                # if food is found, move towards it
+                new_rotation = np.arctan2(
+                    found_food[1] - self.pos[1], found_food[0] - self.pos[0]
+                )
             else:
-                new_rotation = probing_directions[np.argmax(concentrations)]
+                # choose direction with highest concentration
+                if np.max(concentrations) == 0:
+                    new_rotation = self.rotation
+                else:
+                    new_rotation = probing_directions[np.argmax(concentrations)]
         return new_rotation
 
     def move(self):
@@ -107,18 +123,18 @@ class Ant:
             (0 <= new_position_discrete[0] < self.env.grid.size[0])
             and (0 <= new_position_discrete[1] < self.env.grid.size[1])
         ) and (
-            self.env.grid.physical_layer[new_position_discrete] == 0
+            self.env.grid.ant_layer[new_position_discrete] == 0
             or not self.ant_collision
         ):
             # remove ant from old position
-            self.env.grid.physical_layer[self.pos_discrete] = 0
+            self.env.grid.ant_layer[self.pos_discrete] = 0
 
             self.pos = new_position
             self.pos_discrete = new_position_discrete
             self.rotation = new_rotation
 
             # add ant to new position
-            self.env.grid.physical_layer[self.pos_discrete] = 1
+            self.env.grid.ant_layer[self.pos_discrete] = 1
         else:
             self.rotation = self.rotation + np.pi
         return
@@ -150,38 +166,20 @@ class Ant:
             )
 
     def detect_food(self):
-        # create box bounds that stay in bounds
-        box_bounds = [
-            (
-                int(self.pos[0] - self.food_detection_box_size),
-                int(self.pos[1] - self.food_detection_box_size),
-            ),
-            (
-                int(self.pos[0] + self.food_detection_box_size),
-                int(self.pos[1] + self.food_detection_box_size),
-            ),
-        ]
-        box_bounds = [
-            (max(0, box_bounds[0][0]), max(0, box_bounds[0][1])),
-            (
-                min(self.env.grid.size[0], box_bounds[1][0]),
-                min(self.env.grid.size[1], box_bounds[1][1]),
-            ),
-        ]
+        if self.carrying_food:
+            return
 
-        # check if food is in box
-        for i in range(box_bounds[0][0], box_bounds[1][0]):
-            for j in range(box_bounds[0][1], box_bounds[1][1]):
-                if self.env.grid.physical_layer[i, j] == 2:
-                    self.carrying_food = True
-                    self.found_food_at = self.env.iteration
+        # check if were on a food source
+        if self.env.grid.food_layer[self.pos_discrete] == 1:
+            self.carrying_food = True
+            self.found_food_at = self.env.iteration
 
-                    if self.food_depletion:
-                        self.env.grid.physical_layer[i, j] = 0
+            if self.food_depletion:
+                self.env.grid.food_layer[self.pos_discrete] = 0
 
-                    # flip rotation
-                    self.rotation = self.rotation + np.pi
-                    return
+            # flip rotation
+            self.rotation = self.rotation + np.pi
+            return
 
     def detect_nest(self):
         if self.carrying_food:

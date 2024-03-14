@@ -10,13 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 class Grid:
-    ANT = 1
-    FOOD = 2
-
     def __init__(self, size: tuple) -> None:
         self.size = size
 
-        self.physical_layer = np.zeros(size, dtype=np.int8)
+        self.ant_layer = np.zeros(size, dtype=np.int8)
+        self.food_layer = np.zeros(size, dtype=np.int8)
         self.home_pheromone_layer = np.zeros(size, dtype=np.float32)
         self.food_pheromone_layer = np.zeros(size, dtype=np.float32)
 
@@ -29,41 +27,42 @@ class BaseEnvironment:
         self,
         size: tuple,
         nest_location: tuple,
-        logging_interval=40,
         no_ants=200,
         no_iterations=10000,
+        phereomone_decay_rate=0.6,
+        logging_interval=50,
         render_to_screen=False,
         render_interval=1,
         render_step_wait_time=1,
         save_rendering_interval=1000,
         extra_iterations_to_save_rendering=[10, 100, 500],
     ):
-        self.grid = Grid(size)
         self.nest_location = nest_location
-        self.ants = set()
+        self.pheremonone_decay_rate = phereomone_decay_rate
         self.logging_interval = logging_interval
-        self.avg_step_time = 0
-        self.avg_render_time = 0
-        self.iteration = 1
-        self.pheremonone_decay_rate = 0.6
-
         self.render_to_screen = render_to_screen
         self.render_interval = render_interval
         self.render_step_wait_time = render_step_wait_time
         self.save_rendering_interval = save_rendering_interval
         self.extra_iterations_to_save_rendering = extra_iterations_to_save_rendering
 
+        self.grid = Grid(size)
+        self.ants = set()
+        self.avg_step_time = 0
+        self.avg_render_time = 0
+        self.iteration = 1
+
         # spawn ants
-        for self.iteration in range(no_ants):
+        for i in range(no_ants):
             rnd_rotation = np.random.uniform(0, 2 * np.pi)
 
-            ant = Ant(f"ant_{self.iteration}", self, self.nest_location, rnd_rotation)
+            ant = Ant(f"ant_{i}", self, self.nest_location, rnd_rotation)
             self.ants.add(ant)
 
         # spawn some food
-        self.grid.physical_layer[50:60, 50:60] = Grid.FOOD
-        self.grid.physical_layer[400:410, 300:310] = Grid.FOOD
-        self.grid.physical_layer[100:110, 400:410] = Grid.FOOD
+        self.grid.food_layer[50:60, 50:60] = 1
+        self.grid.food_layer[400:410, 300:310] = 1
+        self.grid.food_layer[100:110, 400:410] = 1
 
         if render_to_screen:
             cv2.namedWindow("env_vis", cv2.WINDOW_NORMAL)
@@ -158,10 +157,10 @@ class BaseEnvironment:
         image = np.clip(home_layer + food_layer, 0, 1)
 
         # ants
-        image[self.grid.physical_layer == Grid.ANT] = [1.0, 1.0, 1.0]
+        image[self.grid.ant_layer == 1] = [1.0, 1.0, 1.0]
 
         # food
-        image[self.grid.physical_layer == Grid.FOOD] = [0.0, 0.0, 1.0]
+        image[self.grid.food_layer == 1] = [0.0, 0.0, 1.0]
 
         # 6x6 for nest
         image[
@@ -179,4 +178,10 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     env = BaseEnvironment()
-    env.run((500, 500), (250, 250), render_to_screen=False)
+    env.run(
+        size=(600, 600),
+        no_iterations=100000,
+        nest_location=(300, 300),
+        no_ants=1000,
+        render_to_screen=False,
+    )
