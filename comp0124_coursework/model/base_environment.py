@@ -3,6 +3,7 @@ import time
 
 import cv2
 import numpy as np
+import pandas as pd
 
 from comp0124_coursework.agent.ant import Ant
 
@@ -51,6 +52,7 @@ class BaseEnvironment:
         self.avg_step_time = 0
         self.avg_render_time = 0
         self.iteration = 1
+        self.food_consumption_log = pd.DataFrame()
 
         # spawn ants
         for i in range(no_ants):
@@ -120,6 +122,26 @@ class BaseEnvironment:
             logger.info(
                 f"Food collected over last {self.logging_interval} steps: {self.last_food_amount - np.sum(self.grid.food_layer)} (remaining: {np.sum(self.grid.food_layer)})"
             )
+
+            # append to food consumption log
+            self.food_consumption_log = pd.concat(
+                [
+                    self.food_consumption_log,
+                    pd.DataFrame(
+                        {
+                            "iteration": self.iteration,
+                            "food_collected": self.last_food_amount
+                            - np.sum(self.grid.food_layer),
+                            "food_remaining": np.sum(self.grid.food_layer),
+                        },
+                        index=[0],
+                    ),
+                ]
+            )
+
+            # update CSV file (or crete it if it does not exist)
+            self.food_consumption_log.to_csv("food_consumption_log.csv", index=False)
+
             self.avg_step_time = 0
             self.avg_render_time = 0
             self.last_food_amount = np.sum(self.grid.food_layer)
@@ -184,11 +206,29 @@ class BaseEnvironment:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    env = BaseEnvironment()
-    env.run(
-        size=(600, 600),
-        no_iterations=100000,
-        nest_location=(300, 300),
-        no_ants=1000,
-        render_to_screen=False,
-    )
+    no_of_ants_scenarios = [50, 100]  # , 150, 200, 250, 300, 350, 400, 450, 500]
+    avg_food_collected_per_log_interval = []
+
+    for no_of_ants in no_of_ants_scenarios:
+        env = BaseEnvironment()
+        env.run(
+            size=(600, 600),
+            no_iterations=5000,
+            nest_location=(300, 300),
+            no_ants=no_of_ants,
+            render_to_screen=False,
+        )
+
+        avg_food_collected_per_log_interval.append(
+            env.food_consumption_log["food_collected"].mean()
+        )
+
+        print(f"Finished scenario with {no_of_ants} ants")
+
+    # create CSV file with results
+    pd.DataFrame(
+        {
+            "no_of_ants": no_of_ants_scenarios,
+            "avg_food_collected_per_log_interval": avg_food_collected_per_log_interval,
+        }
+    ).to_csv("food_collected_per_no_ants.csv", index=False)
