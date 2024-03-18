@@ -60,9 +60,12 @@ class BaseEnvironment:
             self.ants.add(ant)
 
         # spawn some food
-        self.grid.food_layer[50:60, 50:60] = 1
-        self.grid.food_layer[400:410, 300:310] = 1
-        self.grid.food_layer[100:110, 400:410] = 1
+        self.grid.food_layer[0:100, 0:100] = 1
+        self.grid.food_layer[200:300, 0:100] = 1
+        self.grid.food_layer[400:500, 0:100] = 1
+
+        # save initial food amount
+        self.last_food_amount = np.sum(self.grid.food_layer)
 
         if render_to_screen:
             cv2.namedWindow("env_vis", cv2.WINDOW_NORMAL)
@@ -114,8 +117,12 @@ class BaseEnvironment:
             logger.info(
                 f"Step: {self.iteration} - Total step time: {self.avg_step_time + self.avg_render_time:.2f}ms (step time: {self.avg_step_time:.2f}ms - render time: {self.avg_render_time:.2f}ms)"
             )
+            logger.info(
+                f"Food collected over last {self.logging_interval} steps: {self.last_food_amount - np.sum(self.grid.food_layer)} (remaining: {np.sum(self.grid.food_layer)})"
+            )
             self.avg_step_time = 0
             self.avg_render_time = 0
+            self.last_food_amount = np.sum(self.grid.food_layer)
 
     def render_handling(
         self,

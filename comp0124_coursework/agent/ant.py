@@ -9,7 +9,7 @@ class Ant:
         position: tuple,
         rotation=0,
         ant_collision=False,
-        food_depletion=False,
+        food_depletion=True,
         pheremone_intensity_coefficient=0.005,
         nest_detection_radius=5,
         no_of_navigation_probes=10,
@@ -119,24 +119,29 @@ class Ant:
             int(new_position[1]),
         )
 
-        if (
+        if not (
             (0 <= new_position_discrete[0] < self.env.grid.size[0])
             and (0 <= new_position_discrete[1] < self.env.grid.size[1])
-        ) and (
-            self.env.grid.ant_layer[new_position_discrete] == 0
-            or not self.ant_collision
         ):
-            # remove ant from old position
-            self.env.grid.ant_layer[self.pos_discrete] = 0
-
-            self.pos = new_position
-            self.pos_discrete = new_position_discrete
-            self.rotation = new_rotation
-
-            # add ant to new position
-            self.env.grid.ant_layer[self.pos_discrete] = 1
-        else:
             self.rotation = self.rotation + np.pi
+            return
+
+        if (
+            self.env.grid.ant_layer[new_position_discrete] == 1
+            and self.pos_discrete != new_position_discrete
+            and self.ant_collision
+        ):
+            return
+
+        # remove ant from old position
+        self.env.grid.ant_layer[self.pos_discrete] = 0
+
+        self.pos = new_position
+        self.pos_discrete = new_position_discrete
+        self.rotation = new_rotation
+
+        # add ant to new position
+        self.env.grid.ant_layer[self.pos_discrete] = 1
         return
 
     def deposit_pheromone(self):
