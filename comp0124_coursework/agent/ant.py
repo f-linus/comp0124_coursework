@@ -119,6 +119,7 @@ class Ant:
             int(new_position[1]),
         )
 
+        # check if new position is within grid
         if not (
             (0 <= new_position_discrete[0] < self.env.grid.size[0])
             and (0 <= new_position_discrete[1] < self.env.grid.size[1])
@@ -126,6 +127,12 @@ class Ant:
             self.rotation = self.rotation + np.pi
             return
 
+        # check if new position is not occupied by an obstacle
+        if self.env.grid.obstacle_layer[new_position_discrete] == 1:
+            self.rotation = self.rotation + np.pi
+            return
+
+        # check if new position is not occupied by another ant
         if (
             self.env.grid.ant_layer[new_position_discrete] == 1
             and self.pos_discrete != new_position_discrete
@@ -196,6 +203,7 @@ class Ant:
                 self.carrying_food = False
                 self.last_nest_visit = self.env.iteration
                 self.rotation = self.rotation + np.pi
+                self.env.food_collected += 1
 
     def step(self):
         self.move()
