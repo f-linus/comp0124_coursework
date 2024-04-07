@@ -37,12 +37,23 @@ class BaseEnvironment:
         render_interval=1,
         render_step_wait_time=1,
         save_rendering_interval=1000,
-        extra_iterations_to_save_rendering=[10, 100, 500],
+        extra_iterations_to_save_rendering=[10, 50, 100, 200, 300, 400, 500],
         food_spawn_prob=0.0035,
-        food_spawn_size=10,
+        food_spawn_size=0.5,
+        food_saturation_threshold=2000,
         no_obstacles=15,
-        seed=2,
+        ant_collision=False,
+        food_depletion=True,
+        pheremone_intensity_coefficient=0.005,
+        nest_detection_radius=5,
+        no_of_navigation_probes=10,
+        probing_distance=5,
+        food_detection_box_size=5,
+        movement_speed=1,
+        rotation_noise=0.2,
+        seed=0,
     ):
+        self.no_ants = no_ants
         self.nest_location = nest_location
         self.pheremonone_decay_rate = phereomone_decay_rate
         self.logging_interval = logging_interval
@@ -53,6 +64,16 @@ class BaseEnvironment:
         self.extra_iterations_to_save_rendering = extra_iterations_to_save_rendering
         self.food_spawn_prob = food_spawn_prob
         self.food_spawn_size = food_spawn_size
+        self.food_saturation_threshold = food_saturation_threshold
+        self.ant_collision = ant_collision
+        self.food_depletion = food_depletion
+        self.pheremone_intensity_coefficient = pheremone_intensity_coefficient
+        self.nest_detection_radius = nest_detection_radius
+        self.no_of_navigation_probes = no_of_navigation_probes
+        self.probing_distance = probing_distance
+        self.food_detection_box_size = food_detection_box_size
+        self.movement_speed = movement_speed
+        self.rotation_noise = rotation_noise
 
         self.grid = Grid(size)
         self.ants = set()
@@ -62,8 +83,11 @@ class BaseEnvironment:
         self.food_collected = 0
         self.food_collection_log = pd.DataFrame()
 
-        np.random.seed(seed)
         self.last_collection_amount = 0
+
+        self.food_spawning_rng = np.random.default_rng(seed)
+        self.obstacle_rng = np.random.default_rng(seed + 1)
+        np.random.seed(seed + 2)
 
         # create obstacles
         self.add_random_obstacles(size, no_obstacles)
@@ -87,15 +111,29 @@ class BaseEnvironment:
         for i in range(no_ants):
             rnd_rotation = np.random.uniform(0, 2 * np.pi)
 
-            ant = Ant(f"ant_{i}", self, self.nest_location, rnd_rotation)
+            ant = Ant(
+                f"ant_{i}",
+                self,
+                self.nest_location,
+                rnd_rotation,
+                self.ant_collision,
+                self.food_depletion,
+                self.pheremone_intensity_coefficient,
+                self.nest_detection_radius,
+                self.no_of_navigation_probes,
+                self.probing_distance,
+                self.food_detection_box_size,
+                self.movement_speed,
+                self.rotation_noise,
+            )
             self.ants.add(ant)
 
     def add_random_obstacles(self, size: tuple, no_obstacles: int):
         for _ in range(no_obstacles):
-            x = np.random.randint(0, size[0])
-            y = np.random.randint(0, size[1])
-            width = np.random.randint(10, 150)
-            height = np.random.randint(10, 200 - width)
+            x = self.obstacle_rng.integers(0, size[0])
+            y = self.obstacle_rng.integers(0, size[1])
+            width = self.obstacle_rng.integers(10, 150)
+            height = self.obstacle_rng.integers(10, 200 - width)
             cv2.rectangle(
                 self.grid.obstacle_layer, (x, y), (x + width, y + height), 1, -1
             )
@@ -141,13 +179,17 @@ class BaseEnvironment:
         )
 
     def spawn_food(self):
-        if np.random.rand() < self.food_spawn_prob:
-            x = np.random.randint(0, self.grid.size[0])
-            y = np.random.randint(0, self.grid.size[1])
+        remaining_food = np.sum(self.grid.food_layer)
+        if (
+            self.food_spawning_rng.uniform() < self.food_spawn_prob
+            and remaining_food < self.food_saturation_threshold
+        ):
+            x = self.food_spawning_rng.integers(0, self.grid.size[0])
+            y = self.food_spawning_rng.integers(0, self.grid.size[1])
             cv2.circle(
                 self.grid.food_layer,
                 (x, y),
-                self.food_spawn_size,
+                int(self.food_spawn_size * np.sqrt(self.no_ants)),
                 1,
                 -1,
             )
