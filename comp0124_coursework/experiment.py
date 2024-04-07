@@ -78,10 +78,11 @@ if __name__ == "__main__":
     search_space = {
         "size": [(600, 600)],
         "nest_location": [(300, 300)],
-        "no_ants": [200],
+        "ant_collision": [False, True],
+        "no_ants": list(range(50, 850, 50)),
         "no_iterations": [10000],
-        "pheromone_decay_rate": [0.05, 0.1, 0.2, 0.3, 0.4, 0.5],
-        "pheromone_intensity_coefficient": [0.001, 0.002, 0.003, 0.005, 0.007],
+        "pheromone_decay_rate": [0.5],
+        "pheromone_intensity_coefficient": [0.003],
     }
 
     experiment(search_space=search_space)
