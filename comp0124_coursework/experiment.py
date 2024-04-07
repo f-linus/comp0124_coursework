@@ -1,6 +1,7 @@
 import itertools
 import logging
 import os
+import time
 
 import pandas as pd
 
@@ -28,10 +29,20 @@ def experiment(search_space: dict):
         results = pd.DataFrame()
 
     # Run the experiment
+    finished_runs = 0
+    last_start_time = None
     for parameters in parameter_dicts:
         index = len(results)
 
         logger.info(f"Running with parameters: {parameters}")
+
+        if last_start_time is not None:
+            eta = (time.time() - last_start_time) * (
+                len(parameter_dicts) - finished_runs
+            )
+            logger.info(f"Estimated time remaining: {eta / 60:.2f} minutes")
+
+        last_start_time = time.time()
 
         # create dir to store renders to
         os.makedirs(f"renders_experiment{index}", exist_ok=True)
@@ -56,6 +67,8 @@ def experiment(search_space: dict):
         logger.info(f"Total food collected: {environment.food_collected}")
         logger.info(f"Mean collection rate: {environment.food_collection_rates.mean()}")
         logger.info(f"Std collection rate: {environment.food_collection_rates.std()}")
+
+        finished_runs += 1
     return
 
 
@@ -66,9 +79,9 @@ if __name__ == "__main__":
         "size": [(600, 600)],
         "nest_location": [(300, 300)],
         "no_ants": [200],
-        "no_iterations": [5000],
-        "pheremone_decay_rate": [0.5, 0.1, 0.2, 0.3],
-        "pheremone_intensity_coefficient": [0.001, 0.002, 0.003],
+        "no_iterations": [10000],
+        "pheremone_decay_rate": [0.05, 0.1, 0.2, 0.3, 0.4, 0.5],
+        "pheremone_intensity_coefficient": [0.001, 0.002, 0.003, 0.005, 0.007],
     }
 
     experiment(search_space=search_space)

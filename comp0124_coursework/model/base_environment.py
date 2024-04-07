@@ -287,42 +287,13 @@ class BaseEnvironment:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    # load CSV file with results (if it exists)
-    try:
-        food_collected_per_no_ants = pd.read_csv("food_collected_per_no_ants.csv")
-    except FileNotFoundError:
-        food_collected_per_no_ants = pd.DataFrame()
-
-    no_of_ants_scenarios = [500]
-    no_steps = 40000
-
-    for no_of_ants in no_of_ants_scenarios:
-        env = BaseEnvironment()
-        env.run(
-            size=(600, 600),
-            no_iterations=no_steps,
-            nest_location=(300, 300),
-            no_ants=no_of_ants,
-            render_to_screen=False,
-        )
-
-        # append to results
-        food_collected_per_no_ants = pd.concat(
-            [
-                food_collected_per_no_ants,
-                pd.DataFrame(
-                    {
-                        "no_of_ants": no_of_ants,
-                        "avg_food_collected_per_log_interval": np.mean(
-                            env.food_collection_log["food_collected"]
-                        ),
-                    },
-                    index=[0],
-                ),
-            ]
-        )
-
-        print(f"Finished scenario with {no_of_ants} ants")
-
-        # create or update CSV file with results
-        food_collected_per_no_ants.to_csv("food_collected_per_no_ants.csv", index=False)
+    os.makedirs("renders_test_run", exist_ok=True)
+    env = BaseEnvironment()
+    env.run(
+        size=(600, 600),
+        no_iterations=1000,
+        nest_location=(300, 300),
+        no_ants=1,
+        food_spawn_size=10,
+        render_file_dir="renders_test_run",
+    )
