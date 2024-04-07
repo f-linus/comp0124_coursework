@@ -32,7 +32,7 @@ class BaseEnvironment:
         nest_location: tuple,
         no_ants=50,
         no_iterations=10000,
-        pheremone_decay_rate=0.6,
+        pheromone_decay_rate=0.6,
         logging_interval=50,
         render_to_screen=False,
         render_to_file=True,
@@ -47,7 +47,7 @@ class BaseEnvironment:
         no_obstacles=15,
         ant_collision=False,
         food_depletion=True,
-        pheremone_intensity_coefficient=0.005,
+        pheromone_intensity_coefficient=0.005,
         nest_detection_radius=5,
         no_of_navigation_probes=10,
         probing_distance=5,
@@ -58,7 +58,7 @@ class BaseEnvironment:
     ):
         self.no_ants = no_ants
         self.nest_location = nest_location
-        self.pheremone_decay_rate = pheremone_decay_rate
+        self.pheromone_decay_rate = pheromone_decay_rate
         self.logging_interval = logging_interval
         self.render_to_screen = render_to_screen
         self.render_to_file = render_to_file
@@ -72,7 +72,7 @@ class BaseEnvironment:
         self.food_saturation_threshold = food_saturation_threshold
         self.ant_collision = ant_collision
         self.food_depletion = food_depletion
-        self.pheremone_intensity_coefficient = pheremone_intensity_coefficient
+        self.pheromone_intensity_coefficient = pheromone_intensity_coefficient
         self.nest_detection_radius = nest_detection_radius
         self.no_of_navigation_probes = no_of_navigation_probes
         self.probing_distance = probing_distance
@@ -123,7 +123,7 @@ class BaseEnvironment:
                 rnd_rotation,
                 self.ant_collision,
                 self.food_depletion,
-                self.pheremone_intensity_coefficient,
+                self.pheromone_intensity_coefficient,
                 self.nest_detection_radius,
                 self.no_of_navigation_probes,
                 self.probing_distance,
@@ -152,7 +152,7 @@ class BaseEnvironment:
     def step(self):
         start_time = time.time()
 
-        self.pheremonone_decay()
+        self.pheromonone_decay()
         self.spawn_food()
 
         # step ants
@@ -161,11 +161,11 @@ class BaseEnvironment:
 
         self.avg_step_time += (time.time() - start_time) * 1000 / self.logging_interval
 
-    def pheremonone_decay(self):
+    def pheromonone_decay(self):
         self.grid.home_pheromone_layer = np.max(
             np.stack(
                 [
-                    self.grid.home_pheromone_layer - self.pheremone_decay_rate,
+                    self.grid.home_pheromone_layer - self.pheromone_decay_rate,
                     np.zeros(self.grid.size),
                 ],
                 axis=2,
@@ -175,7 +175,7 @@ class BaseEnvironment:
         self.grid.food_pheromone_layer = np.max(
             np.stack(
                 [
-                    self.grid.food_pheromone_layer - self.pheremone_decay_rate,
+                    self.grid.food_pheromone_layer - self.pheromone_decay_rate,
                     np.zeros(self.grid.size),
                 ],
                 axis=2,

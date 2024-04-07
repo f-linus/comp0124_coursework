@@ -10,7 +10,7 @@ class Ant:
         rotation=0,
         ant_collision=False,
         food_depletion=True,
-        pheremone_intensity_coefficient=0.005,
+        pheromone_intensity_coefficient=0.005,
         nest_detection_radius=5,
         no_of_navigation_probes=10,
         probing_distance=5,
@@ -24,7 +24,7 @@ class Ant:
         self.rotation = rotation
         self.ant_collision = ant_collision
         self.food_depletion = food_depletion
-        self.pheremone_intensity_coefficient = pheremone_intensity_coefficient
+        self.pheromone_intensity_coefficient = pheromone_intensity_coefficient
         self.nest_detection_radius = nest_detection_radius
         self.probing_distance = probing_distance
         self.no_of_navigation_probes = no_of_navigation_probes
@@ -153,27 +153,27 @@ class Ant:
 
     def deposit_pheromone(self):
         if self.carrying_food:
-            pheremone_concentration = 1000 * np.exp(
-                self.pheremone_intensity_coefficient
+            pheromone_concentration = 1000 * np.exp(
+                self.pheromone_intensity_coefficient
                 * -1
                 * (self.env.iteration - self.found_food_at)
             )
             self.env.grid.food_pheromone_layer[self.pos_discrete] = np.max(
                 [
                     self.env.grid.food_pheromone_layer[self.pos_discrete],
-                    pheremone_concentration,
+                    pheromone_concentration,
                 ]
             )
         else:
-            pheremone_concentration = 1000 * np.exp(
-                self.pheremone_intensity_coefficient
+            pheromone_concentration = 1000 * np.exp(
+                self.pheromone_intensity_coefficient
                 * -1
                 * (self.env.iteration - self.last_nest_visit)
             )
             self.env.grid.home_pheromone_layer[self.pos_discrete] = np.max(
                 [
                     self.env.grid.home_pheromone_layer[self.pos_discrete],
-                    pheremone_concentration,
+                    pheromone_concentration,
                 ]
             )
 

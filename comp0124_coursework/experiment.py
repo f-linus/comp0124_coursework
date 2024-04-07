@@ -80,8 +80,8 @@ if __name__ == "__main__":
         "nest_location": [(300, 300)],
         "no_ants": [200],
         "no_iterations": [10000],
-        "pheremone_decay_rate": [0.05, 0.1, 0.2, 0.3, 0.4, 0.5],
-        "pheremone_intensity_coefficient": [0.001, 0.002, 0.003, 0.005, 0.007],
+        "pheromone_decay_rate": [0.05, 0.1, 0.2, 0.3, 0.4, 0.5],
+        "pheromone_intensity_coefficient": [0.001, 0.002, 0.003, 0.005, 0.007],
     }
 
     experiment(search_space=search_space)
