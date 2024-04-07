@@ -31,9 +31,10 @@ class BaseEnvironment:
         nest_location: tuple,
         no_ants=50,
         no_iterations=10000,
-        phereomone_decay_rate=0.6,
+        pheremone_decay_rate=0.6,
         logging_interval=50,
         render_to_screen=False,
+        render_to_file=True,
         render_interval=1,
         render_step_wait_time=1,
         save_rendering_interval=1000,
@@ -55,9 +56,10 @@ class BaseEnvironment:
     ):
         self.no_ants = no_ants
         self.nest_location = nest_location
-        self.pheremonone_decay_rate = phereomone_decay_rate
+        self.pheremone_decay_rate = pheremone_decay_rate
         self.logging_interval = logging_interval
         self.render_to_screen = render_to_screen
+        self.render_to_file = render_to_file
         self.render_interval = render_interval
         self.render_step_wait_time = render_step_wait_time
         self.save_rendering_interval = save_rendering_interval
@@ -160,7 +162,7 @@ class BaseEnvironment:
         self.grid.home_pheromone_layer = np.max(
             np.stack(
                 [
-                    self.grid.home_pheromone_layer - self.pheremonone_decay_rate,
+                    self.grid.home_pheromone_layer - self.pheremone_decay_rate,
                     np.zeros(self.grid.size),
                 ],
                 axis=2,
@@ -170,7 +172,7 @@ class BaseEnvironment:
         self.grid.food_pheromone_layer = np.max(
             np.stack(
                 [
-                    self.grid.food_pheromone_layer - self.pheremonone_decay_rate,
+                    self.grid.food_pheromone_layer - self.pheremone_decay_rate,
                     np.zeros(self.grid.size),
                 ],
                 axis=2,
@@ -245,9 +247,10 @@ class BaseEnvironment:
                 / self.logging_interval
             )
 
-        if self.iteration in self.extra_iterations_to_save_rendering or (
-            self.iteration % self.save_rendering_interval == 0
-        ):
+        if (
+            self.iteration in self.extra_iterations_to_save_rendering
+            or (self.iteration % self.save_rendering_interval == 0)
+        ) and self.render_to_file:
             if not self.render_to_screen or self.iteration % self.render_interval != 0:
                 image = self.render()
             cv2.imwrite(f"render_{self.iteration}.png", image * 255)
