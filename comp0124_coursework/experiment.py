@@ -44,14 +44,18 @@ def experiment(search_space: dict):
         )
 
         result = pd.DataFrame({k: str(v) for k, v in parameters.items()}, index=[index])
+        result.index.name = "experiment"
+
         result["food_collected"] = environment.food_collected
-        results["collection_rate_mean"] = environment.food_collection_rate.mean()
-        results["collection_rate_std"] = environment.food_collection_rate.std()
+        result["collection_rate_mean"] = environment.food_collection_rates.mean()
+        result["collection_rate_std"] = environment.food_collection_rates.std()
 
         results = pd.concat([results, result])
         results.to_csv("experiment_results.csv", index=True)
 
         logger.info(f"Total food collected: {environment.food_collected}")
+        logger.info(f"Mean collection rate: {environment.food_collection_rates.mean()}")
+        logger.info(f"Std collection rate: {environment.food_collection_rates.std()}")
     return
 
 
@@ -63,8 +67,8 @@ if __name__ == "__main__":
         "nest_location": [(300, 300)],
         "no_ants": [200],
         "no_iterations": [5000],
-        "pheremone_decay_rate": [0.1, 0.3, 0.5, 0.7],
-        "pheremone_intensity_coefficient": [0.003, 0.005, 0.007],
+        "pheremone_decay_rate": [0.5, 0.1, 0.2, 0.3],
+        "pheremone_intensity_coefficient": [0.001, 0.002, 0.003],
     }
 
     experiment(search_space=search_space)
