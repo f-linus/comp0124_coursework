@@ -1,3 +1,4 @@
 **/__pycache__/*
 render_*.png
 *.csv
+.venv/*
