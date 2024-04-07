@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 
 import cv2
@@ -35,6 +36,7 @@ class BaseEnvironment:
         logging_interval=50,
         render_to_screen=False,
         render_to_file=True,
+        render_file_dir="renders",
         render_interval=1,
         render_step_wait_time=1,
         save_rendering_interval=1000,
@@ -60,6 +62,7 @@ class BaseEnvironment:
         self.logging_interval = logging_interval
         self.render_to_screen = render_to_screen
         self.render_to_file = render_to_file
+        self.render_file_dir = render_file_dir
         self.render_interval = render_interval
         self.render_step_wait_time = render_step_wait_time
         self.save_rendering_interval = save_rendering_interval
@@ -83,7 +86,7 @@ class BaseEnvironment:
         self.avg_render_time = 0
         self.iteration = 1
         self.food_collected = 0
-        self.food_collection_log = pd.DataFrame()
+        self.food_collection_rates = np.zeros(no_iterations // logging_interval)
 
         self.last_collection_amount = 0
 
@@ -209,23 +212,9 @@ class BaseEnvironment:
             )
 
             # append to food consumption log
-            self.food_collection_log = pd.concat(
-                [
-                    self.food_collection_log,
-                    pd.DataFrame(
-                        {
-                            "iteration": self.iteration,
-                            "food_collected": self.food_collected
-                            - self.last_collection_amount,
-                            "food_remaining": np.sum(self.grid.food_layer),
-                        },
-                        index=[0],
-                    ),
-                ]
+            self.food_collection_rates[self.iteration // self.logging_interval - 1] = (
+                self.food_collected - self.last_collection_amount
             )
-
-            # update CSV file (or crete it if it does not exist)
-            self.food_collection_log.to_csv("food_collection_log.csv", index=False)
 
             self.avg_step_time = 0
             self.avg_render_time = 0
@@ -253,7 +242,10 @@ class BaseEnvironment:
         ) and self.render_to_file:
             if not self.render_to_screen or self.iteration % self.render_interval != 0:
                 image = self.render()
-            cv2.imwrite(f"render_{self.iteration}.png", image * 255)
+            cv2.imwrite(
+                os.path.join(self.render_file_dir, f"render_{self.iteration}.png"),
+                image * 255,
+            )
 
     def render(self):
         obstacle_layer = np.repeat(
